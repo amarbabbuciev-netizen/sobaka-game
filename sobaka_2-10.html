@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Собака 2 — слей своих псов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg-deep:#1B1033;--bg-mid:#2D1B4E;--coral:#FF6B6B;--yellow:#FFD93D;--mint:#6BCB77;--cream:#FFF8F0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg-deep);font-family:'Nunito',sans-serif;color:var(--cream);overflow:hidden;touch-action:none}
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;transition:opacity .5s ease,transform .5s ease}
+.hidden{opacity:0;pointer-events:none;transform:scale(.96)}
+#landing{background:radial-gradient(circle at 20% 20%,rgba(255,107,107,.35),transparent 55%),radial-gradient(circle at 80% 30%,rgba(107,203,119,.30),transparent 50%),radial-gradient(circle at 50% 85%,rgba(255,217,61,.25),transparent 55%),var(--bg-deep);overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(2px);opacity:.5;animation:drift 14s ease-in-out infinite}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(20px,-30px) scale(1.08)}}
+.paw{position:absolute;font-size:28px;opacity:.18;animation:float 9s linear infinite;filter:drop-shadow(0 0 6px rgba(255,255,255,.2))}
+@keyframes float{0%{transform:translateY(110vh) rotate(0deg)}100%{transform:translateY(-15vh) rotate(40deg)}}
+.landing-title{font-family:'Baloo 2',sans-serif;font-weight:800;font-size:clamp(2.4rem,11vw,4rem);text-align:center;letter-spacing:-1px;margin:0 0 6px;background:linear-gradient(90deg,var(--coral),var(--yellow));-webkit-background-clip:text;background-clip:text;color:transparent;z-index:2}
+.landing-sub{font-size:1rem;opacity:.8;margin-bottom:44px;z-index:2;text-align:center;padding:0 30px}
+#playBtn{z-index:2;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:1.5rem;color:var(--bg-deep);background:var(--yellow);border:none;padding:22px 58px;border-radius:100px;cursor:pointer;animation:pulse 2s infinite;transition:transform .15s ease}
+#playBtn:active{transform:scale(.94)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,217,61,.55)}70%{box-shadow:0 0 0 22px rgba(255,217,61,0)}100%{box-shadow:0 0 0 0 rgba(255,217,61,0)}}
+.landing-loading{font-size:.85rem;opacity:.6;margin-top:14px;z-index:2}
+#game{background:var(--bg-deep);width:100%;height:100%;display:flex;flex-direction:column;align-items:center;padding:14px 14px 20px;gap:10px}
+.topbar{width:100%;max-width:420px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:1.1rem;color:var(--yellow)}
+.stats{display:flex;gap:10px;align-items:center}
+.stat-chip{background:var(--bg-mid);border-radius:14px;padding:6px 12px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:6px}
+.reset-btn{background:transparent;border:1px solid rgba(255,255,255,.25);color:var(--cream);border-radius:14px;width:34px;height:34px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.board-wrap{width:100%;max-width:420px;aspect-ratio:1/1;background:var(--bg-mid);border-radius:22px;position:relative;overflow:hidden;background-image:radial-gradient(circle,rgba(255,255,255,.06) 1.5px,transparent 1.5px);background-size:22px 22px}
+.tile{position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;border-radius:50%;font-family:'Baloo 2',sans-serif;font-weight:800;user-select:none;cursor:grab;box-shadow:0 4px 10px rgba(0,0,0,.35);touch-action:none;will-change:transform}
+.tile.dragging{cursor:grabbing;z-index:10;box-shadow:0 8px 22px rgba(0,0,0,.5);transition:none!important}
+.tile:not(.dragging){transition:left .18s ease,top .18s ease}
+.tile .emoji{font-size:1.5rem;line-height:1}.tile .num{font-size:.9rem;margin-top:-2px}
+.tile.pop{animation:pop .22s ease}
+@keyframes pop{0%{transform:scale(.5)}70%{transform:scale(1.16)}100%{transform:scale(1)}}
+.hint{font-size:.78rem;opacity:.6;text-align:center}
+.upgrades{width:100%;max-width:420px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.upg-btn{background:var(--bg-mid);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 14px;color:var(--cream);font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;width:100%;text-align:left}
+.upg-left{display:flex;align-items:center;gap:10px}.upg-icon{font-size:1.4rem}.upg-title{font-weight:800;font-size:.85rem}.upg-level{font-size:.72rem;opacity:.65}.upg-cost{color:var(--yellow);font-weight:800;font-size:.85rem;white-space:nowrap}
+.upg-btn:disabled{opacity:.35}.upg-btn:active:not(:disabled){background:var(--mint)}
+#rebirthBtn:not(:disabled){border-color:rgba(255,107,107,.5)}#rebirthBtn:not(:disabled) .upg-cost{color:var(--coral)}
+.msg{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--coral);color:var(--cream);padding:6px 16px;border-radius:100px;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:.85rem;opacity:0;transition:opacity .3s ease;pointer-events:none;z-index:5}
+.msg.show{opacity:1}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s ease}
+.modal-overlay.show{opacity:1;pointer-events:auto}.modal-box{background:var(--bg-mid);border-radius:18px;padding:22px;width:min(320px,84vw);text-align:center}.modal-title{font-family:'Baloo 2',sans-serif;font-weight:700;font-size:1.1rem;margin:0 0 8px}.modal-sub{font-size:.85rem;opacity:.75;margin:0 0 18px}.modal-actions{display:flex;gap:10px}.modal-btn{flex:1;border:none;border-radius:12px;padding:11px 0;font-family:'Baloo 2',sans-serif;font-weight:700;font-size:.9rem;cursor:pointer}.modal-btn.cancel{background:rgba(255,255,255,.08);color:var(--cream)}.modal-btn.confirm{background:var(--coral);color:var(--cream)}
+@media(prefers-reduced-motion:reduce){.paw,.blob,#playBtn{animation:none!important}.tile{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div id="landing" class="screen">
+<div class="blob" style="width:220px;height:220px;background:var(--coral);top:10%;left:8%"></div>
+<div class="blob" style="width:260px;height:260px;background:var(--mint);bottom:8%;right:6%;animation-delay:2s"></div>
+<div class="blob" style="width:180px;height:180px;background:var(--yellow);top:60%;left:70%;animation-delay:4s"></div>
+<div id="pawField"></div>
+<h1 class="landing-title">СОБАКА × 2</h1>
+<p class="landing-sub">Собаки появляются сами. Перетаскивай одинаковых друг на друга, чтобы слить, и качай улучшения.</p>
+<button id="playBtn">Нажми 🐾</button>
+<p class="landing-loading" id="loadingNote"></p>
+</div>
+
+<div id="game" class="screen hidden">
+<div class="topbar">
+<span class="brand">🐾 Собака×2</span>
+<div class="stats">
+<div class="stat-chip">⭐ <span id="scoreVal">0</span></div>
+<div class="stat-chip">🦴 <span id="coinVal">0</span></div>
+<button class="reset-btn" id="resetBtn" title="Сбросить прогресс">↺</button>
+</div>
+</div>
+
+<div style="position:relative;width:100%;max-width:420px">
+<div class="msg" id="msgBox">Собаки слились!</div>
+<div class="board-wrap" id="board"></div>
+</div>
+
+<p class="hint">Перетащи собаку на такую же, чтобы слить</p>
+
+<div class="upgrades">
+<button class="upg-btn" id="upgSpawnValue">
+<span class="upg-left"><span class="upg-icon">🐕</span><span><span class="upg-title">Сильные щенки</span><br><span class="upg-level" id="lvlSpawnValue">спавн: 2 · ур. 1</span></span></span>
+<span class="upg-cost" id="costSpawnValue">20 🦴</span>
+</button>
+
+<button class="upg-btn" id="upgSpawnSpeed">
+<span class="upg-left"><span class="upg-icon">⚡</span><span><span class="upg-title">Скорость спавна</span><br><span class="upg-level" id="lvlSpawnSpeed">каждые 3.0с · ур. 1</span></span></span>
+<span class="upg-cost" id="costSpawnSpeed">35 🦴</span>
+</button>
+
+
+
+<button class="upg-btn" id="rebirthBtn">
+<span class="upg-left"><span class="upg-icon">🔥</span><span><span class="upg-title">Перерождение</span><br><span class="upg-level">нужен пёс 2048</span></span></span>
+<span class="upg-cost">x1.0</span>
+</button>
+</div>
+</div>
+
+<div class="modal-overlay" id="resetModal">
+<div class="modal-box">
+<p class="modal-title">Сбросить прогресс?</p>
+<p class="modal-sub">Все собаки, очки, перерождения и улучшения удалятся навсегда.</p>
+<div class="modal-actions">
+<button class="modal-btn cancel" id="resetCancel">Отмена</button>
+<button class="modal-btn confirm" id="resetConfirm">Сбросить</button>
+</div>
+</div>
+</div>
+
+<script>
+
+const STORAGE_KEY = 'dogmerge-save';
+const MAX_TILES = 10;
+const REBIRTH_REQUIREMENT = 2048;
+const DOG_EMOJIS = ['🐶','🐕','🦮','🐕‍🦺','🐩'];
+
+let tiles = [];
+let nextId = 1;
+let score = 0;
+let coins = 0;
+let rebirths = 0;
+let spawnValueLevel = 1;
+let spawnSpeedLevel = 1;
+let spawnTimer = null;
+let saveTimer = null;
+let TILE_D = 70;
+let gameStarted = false;
+
+const $ = id => document.getElementById(id);
+const boardEl = $('board');
+const scoreEl = $('scoreVal');
+const coinEl = $('coinVal');
+const msgBox = $('msgBox');
+
+for (let i = 0; i < 10; i++) {
+  const p = document.createElement('div');
+  p.className = 'paw';
+  p.textContent = '🐾';
+  p.style.left = (Math.random() * 94 + 2) + '%';
+  p.style.animationDuration = (7 + Math.random() * 8) + 's';
+  p.style.animationDelay = (Math.random() * 9) + 's';
+  p.style.fontSize = (18 + Math.random() * 22) + 'px';
+  $('pawField').appendChild(p);
+}
+
+function startGame() {
+  $('landing').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  initGame();
+}
+
+$('playBtn').onclick = startGame;
+$('playBtn').addEventListener('touchend', e => {
+  e.preventDefault();
+  startGame();
+}, {passive:false});
+
+function boardSize() {
+  const r = boardEl.getBoundingClientRect();
+  return {w:r.width, h:r.height};
+}
+
+function baseSpawnValue() {
+  return Math.pow(2, spawnValueLevel);
+}
+
+function rollSpawnValue() {
+  const b = baseSpawnValue();
+  return Math.random() < 0.85 ? b : b * 2;
+}
+
+function randomFreePos() {
+  const {w,h} = boardSize();
+  const pad = TILE_D / 2 + 6;
+
+  for (let attempt=0; attempt<50; attempt++) {
+    const x = pad + Math.random() * Math.max(1, w - pad*2);
+    const y = pad + Math.random() * Math.max(1, h - pad*2);
+    let ok = true;
+
+    for (const t of tiles) {
+      const dx=t.x-x, dy=t.y-y;
+      if (Math.hypot(dx,dy) < TILE_D*.95) {
+        ok=false;
+        break;
+      }
+    }
+    if (ok) return {x,y};
+  }
+
+  return {x:w/2,y:h/2};
+}
+
+function addTile(value) {
+  if (tiles.length >= MAX_TILES) return false;
+  const p = randomFreePos();
+  tiles.push({id:nextId++, value, x:p.x, y:p.y});
+  return true;
+}
+
+function spawnInterval() {
+  return Math.max(700, 3000 - (spawnSpeedLevel-1)*300);
+}
+
+function restartSpawnTimer() {
+  if (spawnTimer) clearInterval(spawnTimer);
+
+  spawnTimer = setInterval(() => {
+    // Максимум ровно 10 собак одновременно.
+    if (tiles.length >= MAX_TILES) return;
+
+    if (addTile(rollSpawnValue())) {
+      render(true);
+      queueSave();
+    }
+  }, spawnInterval());
+}
+
+function getRebirthMultiplier() {
+  return 1 + rebirths * 0.5;
+}
+
+function canRebirth() {
+  return tiles.some(t => t.value >= REBIRTH_REQUIREMENT);
+}
+
+function doRebirth() {
+  if (!canRebirth()) {
+    showMsg('Нужен пёс 2048!');
+    return;
+  }
+
+  rebirths++;
+  tiles=[];
+  nextId=1;
+  score=0;
+  coins=0;
+  spawnValueLevel=1;
+  spawnSpeedLevel=1;
+
+  addTile(2);
+  addTile(2);
+
+  showMsg(`🔥 Перерождение #${rebirths}! x${getRebirthMultiplier().toFixed(1)}`);
+  render(true);
+  updateUpgradeUI();
+  restartSpawnTimer();
+  queueSave();
+}
+
+function tileColor(v) {
+  const colors = {
+    2:'#3A2A5D',4:'#4A3270',8:'#FF6B6B',16:'#FF9F6B',
+    32:'#FFC56B',64:'#FFD93D',128:'#6BCB77',256:'#4FB6E8',
+    512:'#8E6BFF',1024:'#FF6BB5',2048:'#FFF8F0'
+  };
+  return colors[v] || '#FFF8F0';
+}
+
+function dogFor(v) {
+  const idx=Math.min(DOG_EMOJIS.length-1,Math.max(0,Math.floor(Math.log2(v))-1));
+  return DOG_EMOJIS[idx];
+}
+
+function render(fresh=false) {
+  boardEl.innerHTML='';
+
+  for (const t of tiles) {
+    const el=document.createElement('div');
+    el.className='tile' + (fresh ? ' pop' : '');
+    el.style.width=TILE_D+'px';
+    el.style.height=TILE_D+'px';
+    el.style.left=(t.x-TILE_D/2)+'px';
+    el.style.top=(t.y-TILE_D/2)+'px';
+    el.style.background=tileColor(t.value);
+    el.style.color=t.value>=64 ? '#1B1033' : '#FFF8F0';
+    el.innerHTML=`<span class="emoji">${dogFor(t.value)}</span><span class="num">${t.value}</span>`;
+    attachDrag(el,t);
+    boardEl.appendChild(el);
+  }
+
+  scoreEl.textContent=score;
+  coinEl.textContent=coins;
+  updateUpgradeUI();
+}
+
+function showMsg(text) {
+  msgBox.textContent=text;
+  msgBox.classList.add('show');
+  clearTimeout(showMsg.timer);
+  showMsg.timer=setTimeout(()=>msgBox.classList.remove('show'),900);
+}
+
+function attachDrag(el,tile) {
+  let dragging=false;
+  let offX=0,offY=0;
+  let boardRect=null;
+
+  const point = e => {
+    const src=e.touches ? e.touches[0] : e;
+    return {
+      x:src.clientX-boardRect.left,
+      y:src.clientY-boardRect.top
+    };
+  };
+
+  const down=e=>{
+    dragging=true;
+    el.classList.add('dragging');
+    boardRect=boardEl.getBoundingClientRect();
+    const p=point(e);
+    offX=p.x-tile.x;
+    offY=p.y-tile.y;
+    boardEl.appendChild(el);
+  };
+
+  const move=e=>{
+    if(!dragging)return;
+    e.preventDefault();
+    const p=point(e);
+    const r=TILE_D/2;
+    tile.x=Math.max(r,Math.min(boardRect.width-r,p.x-offX));
+    tile.y=Math.max(r,Math.min(boardRect.height-r,p.y-offY));
+    el.style.left=(tile.x-r)+'px';
+    el.style.top=(tile.y-r)+'px';
+  };
+
+  const up=()=>{
+    if(!dragging)return;
+    dragging=false;
+    el.classList.remove('dragging');
+    tryMerge(tile);
+    queueSave();
+  };
+
+  el.addEventListener('mousedown',down);
+  el.addEventListener('touchstart',down,{passive:true});
+  window.addEventListener('mousemove',move,{passive:false});
+  window.addEventListener('touchmove',move,{passive:false});
+  window.addEventListener('mouseup',up);
+  window.addEventListener('touchend',up);
+}
+
+function tryMerge(tile) {
+  let target=null;
+  let best=Infinity;
+
+  for (const other of tiles) {
+    if(other.id===tile.id || other.value!==tile.value) continue;
+
+    const d=Math.hypot(other.x-tile.x,other.y-tile.y);
+    if(d<TILE_D*.85 && d<best) {
+      best=d;
+      target=other;
+    }
+  }
+
+  if(!target) {
+    render(false);
+    return;
+  }
+
+  const newValue=tile.value*2;
+  target.value=newValue;
+  tiles=tiles.filter(t=>t.id!==tile.id);
+
+  const mult=getRebirthMultiplier();
+  score+=Math.round(newValue*mult);
+  coins+=Math.round(newValue/2*mult);
+
+  showMsg(newValue>=REBIRTH_REQUIREMENT ? '🔥 Доступно перерождение!' : 'Гав-гав! Слились!');
+  render(true);
+}
+
+function costSpawnValue() {
+  return 20*spawnValueLevel;
+}
+
+function costSpawnSpeed() {
+  return 20+15*spawnSpeedLevel;
+}
+
+function updateUpgradeUI() {
+  $('lvlSpawnValue').textContent=`спавн: ${baseSpawnValue()} · ур. ${spawnValueLevel}`;
+  $('costSpawnValue').textContent=`${costSpawnValue()} 🦴`;
+  $('upgSpawnValue').disabled=coins<costSpawnValue();
+
+  $('lvlSpawnSpeed').textContent=`каждые ${(spawnInterval()/1000).toFixed(1)}с · ур. ${spawnSpeedLevel}`;
+  $('costSpawnSpeed').textContent=`${costSpawnSpeed()} 🦴`;
+  $('upgSpawnSpeed').disabled=coins<costSpawnSpeed();
+
+  const rb=$('rebirthBtn');
+  rb.disabled=!canRebirth();
+  rb.querySelector('.upg-level').textContent=
+    canRebirth() ? `готово · перерождений: ${rebirths}` : `нужен пёс ${REBIRTH_REQUIREMENT}`;
+  rb.querySelector('.upg-cost').textContent=`x${getRebirthMultiplier().toFixed(1)}`;
+}
+
+async function saveState() {
+  if (!window.storage) return;
+  const state={tiles,nextId,score,coins,rebirths,spawnValueLevel,spawnSpeedLevel};
+  try { await window.storage.set(STORAGE_KEY,JSON.stringify(state),false); } catch(e){}
+}
+
+function queueSave() {
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(saveState,400);
+}
+
+async function loadState() {
+  if (!window.storage) return null;
+  try {
+    const res=await window.storage.get(STORAGE_KEY,false);
+    return res && res.value ? JSON.parse(res.value) : null;
+  } catch(e) { return null; }
+}
+
+async function clearState() {
+  if (!window.storage) return;
+  try { await window.storage.delete(STORAGE_KEY,false); } catch(e){}
+}
+
+async function initGame() {
+  if(gameStarted)return;
+  gameStarted=true;
+
+  const {w}=boardSize();
+  TILE_D=Math.max(56,Math.min(78,w/4.6));
+
+  const saved=await loadState();
+
+  if(saved) {
+    tiles=Array.isArray(saved.tiles) ? saved.tiles.slice(0,MAX_TILES) : [];
+    nextId=saved.nextId || tiles.length+1;
+    score=saved.score || 0;
+    coins=saved.coins || 0;
+    rebirths=saved.rebirths || 0;
+    spawnValueLevel=saved.spawnValueLevel || 1;
+    spawnSpeedLevel=saved.spawnSpeedLevel || 1;
+  } else {
+    addTile(2);
+    addTile(2);
+  }
+
+  render(true);
+  restartSpawnTimer();
+  queueSave();
+}
+
+$('upgSpawnValue').onclick=()=>{
+  const cost=costSpawnValue();
+  if(coins<cost)return;
+  coins-=cost;
+  spawnValueLevel++;
+  showMsg(`🐕 Спавн: ${baseSpawnValue()}`);
+  updateUpgradeUI();
+  queueSave();
+};
+
+$('upgSpawnSpeed').onclick=()=>{
+  const cost=costSpawnSpeed();
+  if(coins<cost)return;
+  coins-=cost;
+  spawnSpeedLevel++;
+  restartSpawnTimer();
+  showMsg(`⚡ Теперь каждые ${(spawnInterval()/1000).toFixed(1)}с`);
+  updateUpgradeUI();
+  queueSave();
+};
+
+$('rebirthBtn').onclick=()=>doRebirth();
+
+$('resetBtn').onclick=()=>$('resetModal').classList.add('show');
+$('resetCancel').onclick=()=>$('resetModal').classList.remove('show');
+
+$('resetConfirm').onclick=async()=>{
+  if(spawnTimer)clearInterval(spawnTimer);
+  await clearState();
+
+  tiles=[];
+  nextId=1;
+  score=0;
+  coins=0;
+  rebirths=0;
+  spawnValueLevel=1;
+  spawnSpeedLevel=1;
+
+  addTile(2);
+  addTile(2);
+  render(true);
+  restartSpawnTimer();
+  $('resetModal').classList.remove('show');
+  showMsg('Прогресс сброшен');
+  queueSave();
+};
+
+window.addEventListener('resize',()=>{
+  if(!gameStarted)return;
+  const {w,h}=boardSize();
+  TILE_D=Math.max(56,Math.min(78,w/4.6));
+  const r=TILE_D/2;
+  for(const t of tiles) {
+    t.x=Math.max(r,Math.min(w-r,t.x));
+    t.y=Math.max(r,Math.min(h-r,t.y));
+  }
+  render(false);
+});
+
+</script>
+</body>
+</html>
